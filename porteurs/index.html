@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>ESI'ACTIONS – Porteurs ESIROI</title>
+
+<!-- Application installable -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d5b54">
+<meta name="description" content="Espace porteur : déclarer une ESI'ACTION, attribuer les ESI'Points, préparer le jury — ESIROI.">
+
+<!-- iPhone et iPad : ajout à l'écran d'accueil -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ESI'ACTIONS">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<link rel="icon" href="icones/icone-192.png">
+
+<style>
+  :root { --petrol:#a9660a; --texte:#22272f; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; padding:0; height:100%; overflow:hidden; background:#fff; }
+  #cadre {
+    position:fixed; inset:0; width:100%; height:100%; border:0; display:block;
+    padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);
+  }
+  /* Écran de démarrage : logo + indicateur */
+  #demarrage {
+    position:fixed; inset:0; background:#fff; z-index:10;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:30px; transition:opacity .3s ease;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  }
+  #demarrage.parti { opacity:0; pointer-events:none; }
+  #demarrage img { width:min(62vw, 260px); height:auto; }
+  .roue {
+    width:42px; height:42px; border:4px solid #f0e2cd; border-top-color:var(--petrol);
+    border-radius:50%; animation:tourne .9s linear infinite;
+  }
+  @keyframes tourne { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion:reduce) { .roue { animation:none; } }
+  #demarrage p { margin:0; font-size:14px; color:var(--texte); }
+  #horsligne {
+    position:fixed; inset:0; background:#fff; z-index:20; display:none;
+    flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:32px;
+    text-align:center; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  }
+  #horsligne h1 { color:#c0202a; font-size:20px; margin:0; }
+  #horsligne p  { color:var(--texte); font-size:15px; margin:0; }
+  #horsligne button {
+    margin-top:10px; padding:10px 22px; border:0; border-radius:8px;
+    background:var(--petrol); color:#fff; font-size:15px; cursor:pointer;
+  }
+  /* Barre de secours : choix du compte Google */
+  #secours {
+    position:fixed; left:0; right:0; bottom:0; z-index:15;
+    background:var(--petrol); color:#fff; padding:8px 10px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+    font-size:13px; display:none; flex-wrap:wrap; gap:6px; align-items:center; justify-content:center;
+    padding-bottom:calc(8px + env(safe-area-inset-bottom));
+  }
+  #secours span { margin-right:4px; width:100%; text-align:center; }
+  #secours button {
+    border:0; border-radius:6px; padding:6px 11px; font-size:13px;
+    background:#fff; color:var(--petrol); cursor:pointer;
+  }
+  #secours button.actif { background:#e8c48a; color:#6e420a; }
+  #secours button.sortie { background:#6e420a; color:#fff; }
+  #ouvrir {
+    position:fixed; right:10px; bottom:10px; z-index:14;
+    background:rgba(169,102,10,.86); color:#fff; border:0; border-radius:20px;
+    padding:8px 14px; font-size:12px; cursor:pointer;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+    padding-bottom:calc(8px + env(safe-area-inset-bottom));
+  }
+  /* Adresse non renseignée : on le dit, plutôt que d'afficher un cadre vide */
+  #areparer {
+    position:fixed; inset:0; background:#fff; z-index:30; display:none;
+    flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:32px;
+    text-align:center; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  }
+  #areparer h1 { color:var(--petrol); font-size:19px; margin:0; }
+  #areparer p { color:var(--texte); font-size:15px; margin:0; max-width:34em; line-height:1.5; }
+  #areparer code { background:#f7efe2; padding:2px 6px; border-radius:4px; font-size:14px; }
+</style>
+</head>
+<body>
+
+<iframe id="cadre" title="ESI'ACTIONS – Porteurs ESIROI" allow="clipboard-write; downloads"></iframe>
+
+<div id="demarrage">
+  <img src="icones/logo-demarrage.png" alt="ESIROI">
+  <div class="roue"></div>
+  <p>Chargement en cours&hellip;</p>
+</div>
+
+<div id="horsligne">
+  <h1>Pas de connexion</h1>
+  <p>V&eacute;rifiez votre connexion Internet, puis r&eacute;essayez.</p>
+  <button onclick="charger()">R&eacute;essayer</button>
+</div>
+
+<div id="areparer">
+  <h1>Adresse de l&rsquo;application non renseign&eacute;e</h1>
+  <p>Ouvrez <code>index.html</code> et remplacez la valeur de
+  <code>URL_APPLICATION</code> par l&rsquo;adresse donn&eacute;e par
+  <b>ESI'POINTS &rarr; Adresse de l&rsquo;application</b> dans le menu du classeur.</p>
+</div>
+
+<button id="ouvrir" onclick="afficherSecours()">Page blanche&nbsp;?</button>
+
+<div id="secours">
+  <span>Le cadre reste vide&nbsp;? Essayez dans cet ordre&nbsp;:</span>
+  <button onclick="essayer('origine')">Adresse&nbsp;d'origine</button>
+  <button onclick="essayer('domaine')">Compte&nbsp;personnel</button>
+  <button onclick="essayer('domaine_eleve')">Compte&nbsp;&eacute;l&egrave;ve</button>
+  <button onclick="essayer(0)">Compte&nbsp;1</button>
+  <button onclick="essayer(1)">Compte&nbsp;2</button>
+  <button onclick="essayer(2)">Compte&nbsp;3</button>
+  <button class="sortie" onclick="ouvrirDansNavigateur()">Ouvrir dans le navigateur</button>
+</div>
+
+<script>
+  /* ------------------------------------------------------------------
+     Adresse de l'application publiée.
+     Menu du classeur → ESI'POINTS → Adresse de l'application.
+     Peu importe la forme collée ici (/macros/…, /a/domaine/macros/…,
+     /a/macros/domaine/…) : la coque en extrait l'identifiant et fabrique
+     les autres variantes elle-même.
+     ------------------------------------------------------------------ */
+  var URL_APPLICATION = 'https://script.google.com/a/macros/univ-reunion.fr/s/AKfycbwuFfz8vhuROdiCxBKi6hvTMTauu57wfJ_RPurBTnsL9m2YbM5aOd8X7O9f-C8Kgn-v/exec';
+
+  var DOMAINE_PERSONNEL = 'univ-reunion.fr';
+  var DOMAINE_ELEVE     = 'co.univ-reunion.fr';
+
+  /* Identifiant du déploiement, extrait quelle que soit la forme de l'adresse.
+     Un simple remplacement de texte ne suffisait pas : Google écrit tantôt
+     script.google.com/a/<domaine>/macros/s/…  tantôt
+     script.google.com/a/macros/<domaine>/s/… — et un remplacement qui ne
+     trouve rien échoue en silence, ce qui rendrait les boutons ci-dessous
+     inopérants sans que personne ne s'en aperçoive. */
+  var ID_DEPLOIEMENT = (URL_APPLICATION.match(/\/s\/([^\/]+)\/exec/) || [])[1] || '';
+
+  var cadre     = document.getElementById('cadre');
+  var demarrage = document.getElementById('demarrage');
+  var horsligne = document.getElementById('horsligne');
+  var masque    = false;
+
+  function masquerDemarrage() {
+    if (masque) { return; }
+    masque = true;
+    demarrage.classList.add('parti');
+    setTimeout(function () { demarrage.style.display = 'none'; }, 320);
+  }
+
+  /* ---- Tolérance aux comptes Google multiples ----------------------------
+     ESI'POINTS a besoin de SAVOIR qui est connecté : le déploiement est
+     restreint au domaine, et l'adresse par défaut est donc la forme
+     /a/macros/<domaine>/. Sur un appareil relié à plusieurs comptes Google,
+     Google refuse parfois d'afficher l'application. Insérer /u/0/, /u/1/…
+     force le compte à utiliser. Le choix qui marche est mémorisé.        */
+  function adressePourCompte(indice) {
+    // Sans identifiant lisible, on s'en tient à l'adresse fournie.
+    if (!ID_DEPLOIEMENT || indice === 'origine' || indice === null || indice === undefined) {
+      return URL_APPLICATION;
+    }
+    var base = 'https://script.google.com';
+    var fin  = '/s/' + ID_DEPLOIEMENT + '/exec';
+    if (indice === 'domaine')       { return base + '/a/macros/' + DOMAINE_PERSONNEL + fin; }
+    if (indice === 'domaine_eleve') { return base + '/a/macros/' + DOMAINE_ELEVE + fin; }
+    return base + '/u/' + indice + '/macros' + fin;
+  }
+
+  function compteMemorise() {
+    try {
+      var v = localStorage.getItem('esipointsCompte');
+      if (v === null || v === '') { return 'origine'; }   // l'adresse fournie
+      if (v === 'origine' || v === 'domaine' || v === 'domaine_eleve') { return v; }
+      return parseInt(v, 10);
+    } catch (e) { return 'origine'; }
+  }
+
+  function essayer(indice) {
+    try { localStorage.setItem('esipointsCompte', String(indice)); } catch (e) { }
+    var boutons = document.querySelectorAll('#secours button');
+    for (var i = 0; i < boutons.length; i++) { boutons[i].classList.remove('actif'); }
+    var cle = { 'origine': 0, 'domaine': 1, 'domaine_eleve': 2 };
+    var pos = (indice in cle) ? cle[indice] : (indice + 3);
+    if (boutons[pos]) { boutons[pos].classList.add('actif'); }
+    charger();
+  }
+
+  /* Dernier recours, celui qui marche toujours : quitter le cadre et ouvrir
+     l'application en premier plan. Les navigateurs qui bloquent les cookies
+     tiers (Safari en tête) ne peuvent pas identifier la personne à
+     l'intérieur d'un cadre ; en navigation de premier niveau, si.          */
+  function ouvrirDansNavigateur() {
+    window.open(adressePourCompte(compteMemorise()), '_blank', 'noopener');
+  }
+
+  function afficherSecours() {
+    var b = document.getElementById('secours');
+    b.style.display = (b.style.display === 'flex') ? 'none' : 'flex';
+  }
+
+  function charger() {
+    if (!ID_DEPLOIEMENT || URL_APPLICATION.indexOf('REMPLACER_PAR') !== -1) {
+      document.getElementById('areparer').style.display = 'flex';
+      masquerDemarrage();
+      return;
+    }
+    masque = false;
+    demarrage.style.display = 'flex';
+    demarrage.classList.remove('parti');
+    if (!navigator.onLine) { horsligne.style.display = 'flex'; masquerDemarrage(); return; }
+    horsligne.style.display = 'none';
+    cadre.src = adressePourCompte(compteMemorise());
+  }
+
+  cadre.addEventListener('load', masquerDemarrage);
+  window.addEventListener('online',  function () { horsligne.style.display = 'none'; });
+  window.addEventListener('offline', function () { horsligne.style.display = 'flex'; });
+
+  // Filet de sécurité : l'écran de démarrage ne reste jamais indéfiniment
+  setTimeout(masquerDemarrage, 12000);
+
+  charger();
+
+  // Enregistrement du service worker (mode hors ligne et installation)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () { });
+    });
+  }
+</script>
+</body>
+</html>
