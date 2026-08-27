@@ -112,9 +112,7 @@
 
 <div id="secours">
   <span>Le cadre reste vide&nbsp;? Essayez dans cet ordre&nbsp;:</span>
-  <button onclick="essayer('origine')">Adresse&nbsp;d'origine</button>
-  <button onclick="essayer('domaine')">Compte&nbsp;personnel</button>
-  <button onclick="essayer('domaine_eleve')">Compte&nbsp;&eacute;l&egrave;ve</button>
+  <button onclick="essayer('origine')">R&eacute;essayer</button>
   <button onclick="essayer(0)">Compte&nbsp;1</button>
   <button onclick="essayer(1)">Compte&nbsp;2</button>
   <button onclick="essayer(2)">Compte&nbsp;3</button>
@@ -129,7 +127,7 @@
      /a/macros/domaine/…) : la coque en extrait l'identifiant et fabrique
      les autres variantes elle-même.
      ------------------------------------------------------------------ */
-  var URL_APPLICATION = 'https://script.google.com/a/macros/univ-reunion.fr/s/AKfycbwuFfz8vhuROdiCxBKi6hvTMTauu57wfJ_RPurBTnsL9m2YbM5aOd8X7O9f-C8Kgn-v/exec';
+  var URL_APPLICATION = 'https://script.google.com/macros/s/AKfycbwncnnM5avvBX-t8cSg6d_7g7uzd1bKZAtulY0QzuB12VeBcsuNPH_f2HZ02S50Uu04/exec';
 
   var DOMAINE_PERSONNEL = 'univ-reunion.fr';
   var DOMAINE_ELEVE     = 'co.univ-reunion.fr';
@@ -155,9 +153,11 @@
   }
 
   /* ---- Tolérance aux comptes Google multiples ----------------------------
-     ESI'POINTS a besoin de SAVOIR qui est connecté : le déploiement est
-     restreint au domaine, et l'adresse par défaut est donc la forme
-     /a/macros/<domaine>/. Sur un appareil relié à plusieurs comptes Google,
+     Ce lien est PUBLIC : aucun compte n'est demandé, et l'élève est reconnu
+     par le jeton que son navigateur conserve. Les variantes de domaine n'ont
+     donc plus lieu d'être — elles casseraient même l'accès, un déploiement
+     anonyme ne répondant pas sur une adresse de domaine.
+     Il reste que sur un appareil relié à plusieurs comptes Google,
      Google refuse parfois d'afficher l'application. Insérer /u/0/, /u/1/…
      force le compte à utiliser. Le choix qui marche est mémorisé.        */
   function adressePourCompte(indice) {
@@ -185,8 +185,8 @@
     try { localStorage.setItem('esipointsCompte', String(indice)); } catch (e) { }
     var boutons = document.querySelectorAll('#secours button');
     for (var i = 0; i < boutons.length; i++) { boutons[i].classList.remove('actif'); }
-    var cle = { 'origine': 0, 'domaine': 1, 'domaine_eleve': 2 };
-    var pos = (indice in cle) ? cle[indice] : (indice + 3);
+    var cle = { 'origine': 0 };
+    var pos = (indice in cle) ? cle[indice] : (indice + 1);
     if (boutons[pos]) { boutons[pos].classList.add('actif'); }
     charger();
   }
