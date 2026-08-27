@@ -1,13 +1,13 @@
 /* Service worker — coque de l'application ESI'POINTS
    Ne met en cache que l'enveloppe : les ESI'Points sont toujours chargés en direct.
- 
+
    La page elle-même est servie en « réseau d'abord » : si l'adresse de
    l'application Apps Script change un jour, la correction se propage au
    prochain chargement sans qu'il faille penser à incrémenter la version
    ci-dessous. Le cache ne sert alors que de secours hors ligne.
    Les icônes, elles, ne changent presque jamais : cache d'abord. */
-const CACHE = 'esiroi-esipoints-v1.3';
- 
+const CACHE = 'esiroi-esipoints-v1.4';
+
 /* Ressources figées : mises en cache à l'installation. */
 const COQUE = [
   './manifest.webmanifest',
@@ -17,7 +17,7 @@ const COQUE = [
   './icones/apple-touch-icon.png',
   './icones/logo-demarrage.png'
 ];
- 
+
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE)
@@ -25,7 +25,7 @@ self.addEventListener('install', (e) => {
       .then(() => self.skipWaiting())
   );
 });
- 
+
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
@@ -33,13 +33,13 @@ self.addEventListener('activate', (e) => {
       .then(() => self.clients.claim())
   );
 });
- 
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   // Tout ce qui n'appartient pas à la coque part directement sur le réseau :
   // en particulier l'application Apps Script, jamais mise en cache.
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) { return; }
- 
+
   // La page : réseau d'abord, cache en secours.
   const estPage = (req.mode === 'navigate') || (req.destination === 'document');
   if (estPage) {
@@ -54,7 +54,7 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
- 
+
   // Le reste (icônes, manifeste) : cache d'abord.
   e.respondWith(
     caches.match(req).then((rep) => rep || fetch(req).catch(() => caches.match('./index.html')))
